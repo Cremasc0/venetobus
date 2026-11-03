@@ -12,9 +12,24 @@
     <link rel="icon" type="image/png" href="appimage.png">
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta id="status-bar-style-meta" name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Busitalia">
     <meta id="theme-color-meta" name="theme-color" content="#ffffff">
+    <script>
+        (function () {
+            try {
+                var view = new URLSearchParams(window.location.search).get('view');
+                if (view === 'ticket') {
+                    document.documentElement.classList.add('view-ticket');
+                    document.getElementById('theme-color-meta').setAttribute('content', '#3eb744');
+                    document.getElementById('status-bar-style-meta').setAttribute('content', 'black-translucent');
+                    document.documentElement.style.backgroundColor = '#3eb744';
+                } else if (view === 'options') {
+                    document.documentElement.classList.add('view-options');
+                }
+            } catch (error) {}
+        })();
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -68,6 +83,25 @@
         }
 
         #tickets-screen.is-hidden { display: none; }
+
+        html.view-ticket,
+        html.view-ticket body {
+            background-color: var(--green);
+        }
+
+        html.view-ticket #tickets-screen,
+        html.view-ticket #setup-screen,
+        html.view-options #tickets-screen {
+            display: none !important;
+        }
+
+        html.view-ticket #ticket-screen {
+            display: none !important;
+        }
+
+        html.view-ticket.ticket-ready #ticket-screen {
+            display: flex !important;
+        }
 
         .tickets-shell {
             position: relative;
@@ -1667,6 +1701,46 @@
         const cartCount = () => cartLines().reduce((sum, line) => sum + line.qty, 0);
         const cartTotal = () => cartLines().reduce((sum, line) => sum + line.item.price * line.qty, 0);
 
+        const setViewUrl = (query) => {
+            try {
+                history.replaceState(null, '', query || location.pathname);
+            } catch (error) {}
+        };
+
+        const persistAppState = () => {
+            try {
+                sessionStorage.setItem('venetobus-app', JSON.stringify({
+                    cart: Array.from(state.cart.entries()),
+                    directions: Array.from(state.directions.entries()),
+                    activation: state.activation,
+                    scheduleValue: state.scheduleValue
+                }));
+            } catch (error) {}
+        };
+
+        const restoreAppState = () => {
+            try {
+                const raw = sessionStorage.getItem('venetobus-app');
+                if (!raw) return false;
+                const saved = JSON.parse(raw);
+                if (Array.isArray(saved.cart)) {
+                    state.cart = new Map(saved.cart.filter((entry) => Array.isArray(entry) && TICKETS.has(entry[0])));
+                }
+                if (Array.isArray(saved.directions)) {
+                    state.directions = new Map(saved.directions.filter((entry) => Array.isArray(entry) && TICKETS.has(entry[0])));
+                }
+                if (saved.activation === 'now' || saved.activation === 'schedule') {
+                    state.activation = saved.activation;
+                }
+                if (typeof saved.scheduleValue === 'string') {
+                    state.scheduleValue = saved.scheduleValue;
+                }
+                return true;
+            } catch (error) {
+                return false;
+            }
+        };
+
         const isOneWay = (item) => item.kind === 'oneway';
 
         const ensureDirection = (item) => {
@@ -1845,6 +1919,7 @@
             btnBuy.disabled = count === 0;
             btnBuy.classList.toggle('is-active', count > 0);
             btnBuy.setAttribute('aria-label', count === 0 ? 'Buy tickets' : 'Buy ' + count + ' ticket' + (count === 1 ? '' : 's') + ' for ' + money(cartTotal()));
+            persistAppState();
         };
 
         const setCartQty = (id, qty) => {
@@ -1967,8 +2042,10 @@
         const openSetup = () => {
             if (!state.cart.size) return;
             state.lastListScroll = ticketList.scrollTop;
+            persistAppState();
             renderSetup();
             setBrowserChrome(false);
+            setViewUrl('?view=options');
             ticketsScreen.classList.add('is-hidden');
             setupScreen.classList.remove('is-hidden');
             setupScreen.scrollTop = 0;
@@ -1978,6 +2055,9 @@
             if (state.activation === 'schedule') {
                 state.scheduleValue = inputDatetime.value;
             }
+            persistAppState();
+            document.documentElement.classList.remove('view-options');
+            setViewUrl(null);
             setBrowserChrome(false);
             setupScreen.classList.add('is-hidden');
             ticketsScreen.classList.remove('is-hidden');
@@ -1989,68 +2069,100 @@
         /* ------------------------------------------------------------------
            Purchase / active ticket
            ------------------------------------------------------------------ */
-        const purchase = () => {
+        const buildTicketData = () => {
             const lines = cartLines();
-            if (!lines.length) return;
+            if (!lines.length) return null;
 
             let activation = new Date();
             if (state.activation === 'schedule') {
                 if (!inputDatetime.value) {
                     scheduleError.hidden = false;
                     inputDatetime.focus();
-                    return;
+                    return null;
                 }
                 activation = new Date(inputDatetime.value);
                 if (Number.isNaN(activation.getTime())) {
                     scheduleError.hidden = false;
                     inputDatetime.focus();
-                    return;
+                    return null;
                 }
             }
 
             scheduleError.hidden = true;
 
             const first = lines[0].item;
-            const totalQty = lines.reduce((sum, line) => sum + line.qty, 0);
-            const total = cartTotal();
-            const zoneType = ['pass', 'urban', 'carnet'].indexOf(first.kind) !== -1;
             const direction = isOneWay(first) ? ensureDirection(first) : null;
 
-            displayTitle.textContent = first.title;
+            return {
+                title: first.title,
+                zone: first.group,
+                zoneType: ['pass', 'urban', 'carnet'].indexOf(first.kind) !== -1,
+                from: direction ? direction.from : first.from,
+                to: direction ? direction.to : first.to,
+                qty: lines.reduce((sum, line) => sum + line.qty, 0),
+                price: cartTotal(),
+                validity: first.validity,
+                activation: activation.toISOString(),
+                issued: new Date(activation.getTime() - 60000).toISOString(),
+                code: randomInt(1000, 9999) + '/' + randomInt(1000000, 9999999)
+            };
+        };
 
-            if (zoneType) {
+        const applyTicketData = (data) => {
+            if (!data || !data.activation) return false;
+
+            document.documentElement.classList.add('view-ticket');
+            displayTitle.textContent = data.title || 'Ticket';
+
+            if (data.zoneType) {
                 routeLinear.hidden = true;
                 routeZone.hidden = false;
-                displayZone.textContent = first.group;
+                displayZone.textContent = data.zone || '';
             } else {
                 routeZone.hidden = true;
                 routeLinear.hidden = false;
-                displayFrom.textContent = direction ? direction.from : first.from;
-                displayTo.textContent = direction ? direction.to : first.to;
+                displayFrom.textContent = data.from || '';
+                displayTo.textContent = data.to || '';
             }
 
+            const activation = new Date(data.activation);
             displayActivated.textContent = formatDateLong(activation);
-            displayIssued.textContent = formatDateShort(new Date(activation.getTime() - 60000));
-            displayPrice.textContent = moneyPlain(total);
-            displayCode.textContent = randomInt(1000, 9999) + '/' + randomInt(1000000, 9999999);
+            displayIssued.textContent = formatDateShort(new Date(data.issued));
+            displayPrice.textContent = moneyPlain(Number(data.price) || 0);
+            displayCode.textContent = data.code || '----/-------';
 
-            quantityWrap.hidden = totalQty <= 1;
-            if (totalQty > 1) {
-                displayQuantity.textContent = String(totalQty);
+            quantityWrap.hidden = !(Number(data.qty) > 1);
+            if (Number(data.qty) > 1) {
+                displayQuantity.textContent = String(data.qty);
             }
 
-            expirationTime = activation.getTime() + parseValidityMs(first.validity);
+            expirationTime = activation.getTime() + parseValidityMs(data.validity || '1 day');
             if (timerInterval) clearInterval(timerInterval);
             updateClock();
             timerInterval = setInterval(updateClock, 1000);
 
+            ticketsScreen.classList.add('is-hidden');
             setupScreen.classList.add('is-hidden');
             ticketScreen.classList.remove('hidden');
+            document.documentElement.classList.add('ticket-ready');
             setBrowserChrome(true);
             window.scrollTo(0, 0);
             document.getElementById('ticket-scroll-area').scrollTop = 0;
             document.getElementById('btn-read-all').setAttribute('aria-expanded', 'false');
             document.getElementById('ticket-disclaimer').classList.add('hidden');
+            return true;
+        };
+
+        const purchase = () => {
+            const data = buildTicketData();
+            if (!data) return;
+
+            persistAppState();
+            try {
+                sessionStorage.setItem('venetobus-ticket', JSON.stringify(data));
+            } catch (error) {}
+
+            window.location.href = '?view=ticket';
         };
 
         const updateClock = () => {
@@ -2170,6 +2282,7 @@
             } else {
                 direction.to = event.target.value;
             }
+            persistAppState();
         });
 
         directionList.addEventListener('click', (event) => {
@@ -2181,6 +2294,7 @@
             direction.from = direction.to;
             direction.to = previousFrom;
             renderSetup();
+            persistAppState();
         });
 
         document.querySelectorAll('input[name="activation"]').forEach((radio) => {
@@ -2192,12 +2306,14 @@
                     inputDatetime.value = state.scheduleValue;
                 }
                 scheduleError.hidden = true;
+                persistAppState();
             });
         });
 
         inputDatetime.addEventListener('input', () => {
             state.scheduleValue = inputDatetime.value;
             scheduleError.hidden = true;
+            persistAppState();
         });
 
         btnGenerate.addEventListener('click', purchase);
@@ -2223,10 +2339,7 @@
         /* Active ticket interactions (kept from the original site) */
         document.getElementById('btn-back').addEventListener('click', () => {
             if (timerInterval) clearInterval(timerInterval);
-            ticketScreen.classList.add('hidden');
-            setBrowserChrome(false);
-            setupScreen.classList.remove('is-hidden');
-            renderSetup();
+            window.location.replace('?view=options');
         });
 
         document.getElementById('btn-read-all').addEventListener('click', () => {
@@ -2257,9 +2370,37 @@
             }
         });
 
-        /* Initial render */
-        setBrowserChrome(false);
-        renderGroups();
+        /* Initial view */
+        const initialView = new URLSearchParams(location.search).get('view');
+
+        if (initialView === 'ticket') {
+            let ticketData = null;
+            try {
+                ticketData = JSON.parse(sessionStorage.getItem('venetobus-ticket') || 'null');
+            } catch (error) {}
+
+            if (!applyTicketData(ticketData)) {
+                document.documentElement.classList.remove('view-ticket');
+                document.documentElement.classList.remove('ticket-ready');
+                setViewUrl(null);
+                setBrowserChrome(false);
+                restoreAppState();
+                renderGroups();
+            }
+        } else {
+            restoreAppState();
+            renderGroups();
+            setBrowserChrome(false);
+
+            if (initialView === 'options') {
+                if (state.cart.size) {
+                    openSetup();
+                } else {
+                    document.documentElement.classList.remove('view-options');
+                    setViewUrl(null);
+                }
+            }
+        }
     });
 </script>
 
