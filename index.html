@@ -1649,12 +1649,12 @@
             {
                 name: 'Aeroporto Marco Polo Venezia',
                 items: [
-                    mk('apt-pd', 'Aeroporto Marco Polo Venezia', 'PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 13.00, 'oneway', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
-                    mk('apt-montegrotto', 'Aeroporto Marco Polo Venezia', 'MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 15.00, 'oneway', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO'),
-                    mk('apt-under12-pd', 'Aeroporto Marco Polo Venezia', 'UNDER 12 PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 6.50, 'oneway', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
-                    mk('apt-under12-montegrotto', 'Aeroporto Marco Polo Venezia', 'UNDER 12 MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 7.50, 'oneway', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO'),
-                    mk('apt-ar-pd', 'Aeroporto Marco Polo Venezia', 'A/R IN GIORNATA PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 1 day', 23.00, 'roundtrip', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
-                    mk('apt-ar-montegrotto', 'Aeroporto Marco Polo Venezia', 'A/R IN GIORNATA MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 1 day', 25.00, 'roundtrip', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO')
+                    mk('apt-pd', 'Aeroporto Marco Polo Venezia', 'PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 24 hours', 13.00, 'oneway', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-montegrotto', 'Aeroporto Marco Polo Venezia', 'MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 24 hours', 15.00, 'oneway', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-under12-pd', 'Aeroporto Marco Polo Venezia', 'UNDER 12 PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 24 hours', 6.50, 'oneway', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-under12-montegrotto', 'Aeroporto Marco Polo Venezia', 'UNDER 12 MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 24 hours', 7.50, 'oneway', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-ar-pd', 'Aeroporto Marco Polo Venezia', 'A/R IN GIORNATA PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 24 hours', 23.00, 'roundtrip', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-ar-montegrotto', 'Aeroporto Marco Polo Venezia', 'A/R IN GIORNATA MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 24 hours', 25.00, 'roundtrip', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO')
                 ]
             },
             {
@@ -1751,10 +1751,12 @@
         };
 
         const parseValidityMs = (validity) => {
-            const match = /(\d+)\s*(minute|minutes|day|days)/i.exec(validity);
+            const match = /(\d+)\s*(minute|minutes|hour|hours|day|days)/i.exec(validity);
             if (!match) return 24 * 60 * 60 * 1000;
             const amount = Number(match[1]);
-            return /day/i.test(match[2]) ? amount * 86400000 : amount * 60000;
+            if (/day/i.test(match[2])) return amount * 86400000;
+            if (/hour/i.test(match[2])) return amount * 3600000;
+            return amount * 60000;
         };
 
         const pad = (number) => String(number).padStart(2, '0');
@@ -2112,7 +2114,7 @@
             if (!data || !data.activation) return false;
 
             document.documentElement.classList.add('view-ticket');
-            displayTitle.textContent = data.title || 'Ticket';
+            displayTitle.textContent = 'CORSA SEMPLICE CON BAGAGLIO';
 
             if (data.zoneType) {
                 routeLinear.hidden = true;
