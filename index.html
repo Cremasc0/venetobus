@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tickets · Busitalia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- iOS Home Screen Icon & Web App Meta -->
+    <link rel="apple-touch-icon" href="appimage.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="appimage.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="appimage.png">
+    <link rel="icon" type="image/png" href="appimage.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Busitalia">
+    <meta name="theme-color" content="#3eb744">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --green: #3eb744;
+            --red: #ab1c32;
+            --ink: #1c1c1c;
+            --muted: #6b7280;
+            --line: #e8e8e8;
+            --page: #f3f3f4;
+            --buy-off: #d6d6d6;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { background-color: var(--page); }
+
+        html, body, button, input, textarea, select {
+            font-family: 'Jost', 'Futura', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--page);
+            color: var(--ink);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        button { cursor: pointer; }
+        button:disabled { cursor: default; }
+        [hidden] { display: none !important; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ---------- Ticket select screen ---------- */
+
+        #tickets-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            background: #e9e9ea;
+        }
+
+        #tickets-screen.is-hidden { display: none; }
+
+        .tickets-shell {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            overflow: hidden;
+            background: var(--page);
+        }
+
+        .tickets-header {
+            flex: none;
+            background: #fff;
+        }
+
+        .tickets-titlebar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: calc(8px + env(safe-area-inset-top)) 56px 4px;
+            min-height: calc(48px + env(safe-area-inset-top));
+        }
+
+        .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--red);
+            transition: background-color .15s ease;
+        }
+
+        .icon-btn:active { background: rgba(171, 28, 50, .07); }
+        .icon-btn svg { width: 24px; height: 24px; }
+
+        .tickets-titlebar .icon-btn {
+            position: absolute;
+            left: 10px;
+            bottom: 2px;
+        }
+
+        .screen-title {
+            margin: 0;
+            color: var(--red);
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: .2px;
+            line-height: 1.2;
+        }
+
+        .search-wrap {
+            width: 100%;
+            padding: 2px 16px 12px;
+        }
+
+        .search-field { position: relative; }
+
+        .search-field .search-icon {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            width: 20px;
+            height: 20px;
+            transform: translateY(-50%);
+            color: #4b5563;
+            pointer-events: none;
+        }
+
+        .search-field input {
+            width: 100%;
+            height: 44px;
+            padding: 0 42px 0 43px;
+            border: 1px solid #d5d5d5;
+            border-radius: 11px;
+            outline: none;
+            background: #fff;
+            color: #1f2937;
+            font-size: 15px;
+            font-weight: 400;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .search-field input::placeholder { color: #6b7280; opacity: 1; }
+
+        .search-field input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(171, 28, 50, .08);
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 7px;
+            top: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            transform: translateY(-50%);
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: #6b7280;
+        }
+
+        .search-clear svg { width: 16px; height: 16px; }
+
+        .choose-bar {
+            flex: none;
+            background: #fff;
+            border-top: 1px solid #ededed;
+            border-bottom: 1px solid #e4e4e4;
+        }
+
+        .choose-bar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 8px 16px;
+        }
+
+        .choose-bar h2 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: .1px;
+        }
+
+        .choose-bar img {
+            display: block;
+            width: auto;
+            height: 28px;
+        }
+
+        .ticket-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 12px 0 calc(118px + env(safe-area-inset-bottom));
+            scrollbar-width: none;
+        }
+
+        .ticket-list::-webkit-scrollbar { display: none; }
+
+        .ticket-list-inner {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .ticket-group { background: transparent; }
+
+        .group-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            padding: 15px 16px;
+            border: 0;
+            border-bottom: 1px solid var(--line);
+            background: #fff;
+            color: var(--ink);
+            text-align: left;
+            font-size: 15px;
+            font-weight: 400;
+            line-height: 1.3;
+        }
+
+        .group-head:active { background: #fafafa; }
+        .ticket-group.open .group-head { border-bottom-color: transparent; }
+
+        .group-head .chevron {
+            flex: none;
+            width: 19px;
+            height: 19px;
+            color: #2f2f2f;
+            transition: transform .18s ease;
+        }
+
+        .ticket-group.open .group-head .chevron { transform: rotate(180deg); }
+
+        .group-items {
+            margin: 0 12px 14px;
+            overflow: hidden;
+            border: 1px solid #dcdcdc;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 2px 7px rgba(0, 0, 0, .07);
+        }
+
+        .ticket-item {
+            padding: 13px 15px 10px;
+            border-bottom: 1px solid #ececec;
+            background: #fff;
+        }
+
+        .ticket-item:last-child { border-bottom: 0; }
+
+        .ticket-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .ticket-title {
+            margin: 0;
+            color: #1d1d1d;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.35;
+            letter-spacing: .015em;
+            text-transform: uppercase;
+        }
+
+        .info-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 22px;
+            height: 22px;
+            margin-top: 1px;
+            padding: 0 0 1px;
+            border: 1.5px solid var(--red);
+            border-radius: 5px;
+            background: #fff;
+            color: var(--red);
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 13px;
+            font-weight: 700;
+            font-style: italic;
+            line-height: 1;
+        }
+
+        .info-btn:active { background: rgba(171, 28, 50, .06); }
+
+        .ticket-validity {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+            color: #3d3d3d;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+
+        .ticket-validity svg {
+            flex: none;
+            width: 14px;
+            height: 14px;
+            color: #2f2f2f;
+        }
+
+        .ticket-price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 9px;
+            padding-top: 8px;
+            border-top: 1px solid #ececec;
+        }
+
+        .price-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #1d1d1d;
+            font-size: 13px;
+            line-height: 1.2;
+        }
+
+        .price-label svg {
+            flex: none;
+            width: 22px;
+            height: 22px;
+            color: #1d1d1d;
+        }
+
+        .cart-pill {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 108px;
+            height: 33px;
+            padding: 0 15px;
+            border: 1.5px solid var(--red);
+            border-radius: 7px;
+            background: #fff;
+            color: var(--red);
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1;
+            transition: background-color .15s ease, color .15s ease, transform .1s ease;
+        }
+
+        .cart-pill svg {
+            flex: none;
+            width: 17px;
+            height: 17px;
+        }
+
+        .cart-pill:active { transform: scale(.97); }
+
+        .cart-pill[aria-pressed="true"] {
+            background: var(--red);
+            color: #fff;
+        }
+
+        .cart-pill .pill-qty {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            border: 1.5px solid var(--red);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--red);
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .empty-search {
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .empty-search strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--ink);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .empty-search span { font-size: 13px; }
+
+        /* Bottom buy sheet */
+
+        .buy-sheet {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 8;
+            padding: 6px 16px calc(12px + env(safe-area-inset-bottom));
+            border-top: 1px solid #e9e9e9;
+            border-radius: 16px 16px 0 0;
+            background: #fff;
+            box-shadow: 0 -8px 26px rgba(0, 0, 0, .08);
+        }
+
+        .sheet-grab {
+            width: 44px;
+            height: 4px;
+            margin: 2px auto 9px;
+            border-radius: 999px;
+            background: #171717;
+        }
+
+        .buy-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 50px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 9px;
+            background: var(--buy-off);
+            color: #151515;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: .1px;
+            transition: background-color .18s ease, color .18s ease, transform .1s ease, box-shadow .18s ease;
+        }
+
+        .buy-btn.is-active {
+            background: var(--red);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(171, 28, 50, .22);
+        }
+
+        .buy-btn.is-active:active { transform: scale(.988); }
+
+        .buy-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .buy-left svg { width: 21px; height: 21px; }
+
+        /* ---------- Ticket options screen ---------- */
+
+        #setup-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 35;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            background: #f2f2f3;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #setup-screen.is-hidden { display: none; }
+
+        .setup-shell {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100%;
+            margin: 0 auto;
+            padding-bottom: calc(28px + env(safe-area-inset-bottom));
+            background: #fff;
+        }
+
+        .setup-header {
+            position: sticky;
+            top: 0;
+            z-index: 6;
+            background: rgba(255, 255, 255, .97);
+            border-bottom: 1px solid #ededed;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+        }
+
+        .setup-topbar {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(52px + env(safe-area-inset-top));
+            padding: calc(8px + env(safe-area-inset-top)) 56px 8px;
+        }
+
+        .setup-topbar .icon-btn {
+            position: absolute;
+            left: 10px;
+            bottom: 8px;
+            color: #333;
+        }
+
+        .setup-topbar .screen-title {
+            color: #1c1c1c;
+            font-size: 17px;
+        }
+
+        .setup-body { padding: 16px 16px 8px; }
+
+        .setup-intro {
+            margin: 0 0 14px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .panel {
+            margin-bottom: 12px;
+            padding: 14px;
+            border: 1px solid #e7e7e7;
+            border-radius: 14px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .025);
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 11px;
+        }
+
+        .panel-title {
+            margin: 0;
+            color: #1b1b1b;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: .1px;
+        }
+
+        .panel-hint {
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .text-link {
+            padding: 2px;
+            border: 0;
+            background: transparent;
+            color: var(--red);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .summary-list { display: flex; flex-direction: column; }
+
+        .summary-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 0;
+            border-top: 1px solid #ededed;
+        }
+
+        .summary-row:first-child { padding-top: 0; border-top: 0; }
+
+        .summary-main { min-width: 0; }
+
+        .summary-name {
+            color: #1d1d1d;
+            font-size: 12.5px;
+            font-weight: 700;
+            line-height: 1.35;
+            text-transform: uppercase;
+        }
+
+        .summary-meta {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 11.5px;
+            line-height: 1.3;
+        }
+
+        .summary-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            flex: none;
+        }
+
+        .summary-line-total {
+            color: #1d1d1d;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .stepper {
+            display: inline-flex;
+            align-items: center;
+            height: 28px;
+            overflow: hidden;
+            border: 1px solid #d8d8d8;
+            border-radius: 7px;
+            background: #fff;
+        }
+
+        .qty-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 0;
+            background: #fff;
+            color: #1d1d1d;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .qty-btn:disabled { color: #c9c9c9; }
+        .qty-btn:active:not(:disabled) { background: #f5f5f5; }
+
+        .qty-num {
+            min-width: 22px;
+            color: #1d1d1d;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .summary-total {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-top: 4px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e2e2;
+        }
+
+        .summary-total span { color: #444; font-size: 13px; }
+
+        .summary-total strong {
+            color: #1b1b1b;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .direction-list { display: flex; flex-direction: column; gap: 16px; }
+
+        .direction-block + .direction-block {
+            padding-top: 15px;
+            border-top: 1px solid #ededed;
+        }
+
+        .direction-name {
+            margin-bottom: 8px;
+            color: #303030;
+            font-size: 11.5px;
+            font-weight: 700;
+            line-height: 1.35;
+            text-transform: uppercase;
+        }
+
+        .station-fields {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .field label {
+            display: block;
+            margin-bottom: 4px;
+            color: #6b7280;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+
+        .field input {
+            width: 100%;
+            height: 43px;
+            padding: 0 48px 0 12px;
+            border: 1px solid #d8d8d8;
+            border-radius: 9px;
+            outline: none;
+            background: #fff;
+            color: #1d1d1d;
+            font-size: 14px;
+            font-weight: 500;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .field input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(171, 28, 50, .07);
+        }
+
+        .swap-btn {
+            position: absolute;
+            top: 50%;
+            right: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            transform: translateY(-50%);
+            border: 1px solid #dedede;
+            border-radius: 999px;
+            background: #fff;
+            color: #555;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, .08);
+        }
+
+        .swap-btn svg { width: 18px; height: 18px; }
+        .swap-btn:active { transform: translateY(-50%) scale(.94); }
+
+        .note {
+            display: flex;
+            gap: 7px;
+            margin: 10px 0 0;
+            color: var(--muted);
+            font-size: 11.5px;
+            line-height: 1.4;
+        }
+
+        .note svg { flex: none; width: 14px; height: 14px; margin-top: 1px; }
+
+        .radio-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 9px 0;
+            cursor: pointer;
+        }
+
+        .radio-row + .radio-row { border-top: 1px solid #f0f0f0; }
+
+        .radio-row input[type="radio"] {
+            position: relative;
+            flex: none;
+            width: 19px;
+            height: 19px;
+            margin: 2px 0 0;
+            border: 1.5px solid #c4c4c4;
+            border-radius: 50%;
+            outline: none;
+            background: #fff;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .radio-row input[type="radio"]:checked { border-color: var(--red); }
+
+        .radio-row input[type="radio"]:checked::after {
+            content: "";
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: var(--red);
+        }
+
+        .radio-copy { min-width: 0; }
+
+        .radio-title {
+            display: block;
+            color: #1d1d1d;
+            font-size: 13.5px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .radio-sub {
+            display: block;
+            margin-top: 1px;
+            color: var(--muted);
+            font-size: 11.5px;
+            line-height: 1.35;
+        }
+
+        .schedule-fields {
+            margin-top: 4px;
+            padding: 10px 0 2px 29px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .schedule-fields label {
+            display: block;
+            margin-bottom: 5px;
+            color: #6b7280;
+            font-size: 11.5px;
+            font-weight: 600;
+        }
+
+        .schedule-fields input {
+            width: 100%;
+            height: 44px;
+            padding: 0 11px;
+            border: 1px solid #d8d8d8;
+            border-radius: 9px;
+            outline: none;
+            background: #fff;
+            color: #1d1d1d;
+            font-size: 14px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .schedule-fields input:focus {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px rgba(171, 28, 50, .07);
+        }
+
+        .field-error {
+            margin: 6px 0 0;
+            color: var(--red);
+            font-size: 11.5px;
+            font-weight: 500;
+        }
+
+        .purchase-wrap { padding-top: 6px; }
+
+        .purchase-btn {
+            width: 100%;
+            height: 54px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 12px;
+            background: var(--green);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: .15px;
+            box-shadow: 0 7px 18px rgba(62, 183, 68, .24);
+            transition: transform .1s ease, background-color .15s ease;
+        }
+
+        .purchase-btn:active { transform: scale(.985); background: #38a83e; }
+
+        .setup-disclaimer {
+            margin: 12px 2px 0;
+            color: #9a9a9a;
+            font-size: 10.5px;
+            line-height: 1.45;
+            text-align: center;
+        }
+
+        /* ---------- Info sheet ---------- */
+
+        .info-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .info-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(12, 12, 12, .42);
+        }
+
+        .info-card {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            padding: 8px 20px calc(20px + env(safe-area-inset-bottom));
+            border-radius: 20px 20px 0 0;
+            background: #fff;
+            box-shadow: 0 -12px 44px rgba(0, 0, 0, .22);
+            animation: sheetUp .2s ease-out;
+        }
+
+        @keyframes sheetUp {
+            from { transform: translateY(24px); opacity: .55; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .info-card .sheet-grab { margin-top: 0; }
+
+        .info-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 8px 0 4px;
+        }
+
+        .info-mark {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            width: 24px;
+            height: 24px;
+            margin-top: 1px;
+            border: 1.5px solid var(--red);
+            border-radius: 6px;
+            color: var(--red);
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 14px;
+            font-weight: 700;
+            font-style: italic;
+        }
+
+        .info-title {
+            margin: 0;
+            color: #1b1b1b;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.35;
+            text-transform: uppercase;
+        }
+
+        .info-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 34px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .info-meta svg { width: 14px; height: 14px; }
+
+        .info-desc {
+            margin: 14px 0 0;
+            color: #444;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .info-price {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 13px;
+            border-top: 1px solid #ececec;
+            font-size: 13px;
+        }
+
+        .info-price strong { font-size: 17px; }
+
+        .info-close {
+            width: 100%;
+            height: 46px;
+            margin-top: 16px;
+            border: 1px solid #dedede;
+            border-radius: 10px;
+            background: #fff;
+            color: #1d1d1d;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* ---------- Toast ---------- */
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: calc(100px + env(safe-area-inset-bottom));
+            z-index: 90;
+            max-width: calc(100vw - 48px);
+            padding: 9px 15px;
+            transform: translateX(-50%);
+            border-radius: 999px;
+            background: rgba(20, 20, 20, .9);
+            color: #fff;
+            font-size: 12.5px;
+            line-height: 1.35;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        /* ---------- Existing active ticket styles ---------- */
+
+        @keyframes swipeRight {
+            0% { transform: translateX(-50%); }
+            100% { transform: translateX(0%); }
+        }
+
+        .animate-strip {
+            animation: swipeRight 5s linear infinite;
+            will-change: transform;
+        }
+
+        #ticket-screen::after {
+            content: "";
+            position: fixed;
+            inset-inline: 0;
+            bottom: 0;
+            height: 90px;
+            background: #fff;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .qr-enlarge-link { text-decoration: none; }
+        .qr-enlarge-label { display: inline-flex; align-items: baseline; }
+        .qr-enlarge-text { position: relative; top: 5px; }
+        .qr-enlarge-underline { border-bottom: 1.5px solid currentColor; padding-bottom: 1px; }
+
+        @media (min-width: 481px) {
+            .tickets-shell { box-shadow: 0 0 38px rgba(0, 0, 0, .08); }
+            .setup-shell { box-shadow: 0 0 38px rgba(0, 0, 0, .06); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .animate-strip { animation: none; }
+            .info-card { animation: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container" class="w-full min-h-[100dvh] relative bg-[#3eb744]">
+
+    <!-- ================= TICKET SELECT SCREEN ================= -->
+    <section id="tickets-screen" aria-label="Ticket selection">
+        <div class="tickets-shell">
+            <header class="tickets-header">
+                <div class="tickets-titlebar">
+                    <button type="button" id="btn-tickets-back" class="icon-btn" aria-label="Go back">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <h1 class="screen-title">Tickets</h1>
+                </div>
+                <div class="search-wrap">
+                    <div class="search-field">
+                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM16 16l4.5 4.5"/>
+                        </svg>
+                        <input type="text" id="ticket-search" inputmode="search" autocomplete="off" spellcheck="false" placeholder="Search ticket" aria-label="Search ticket">
+                        <button type="button" id="search-clear" class="search-clear" aria-label="Clear search" hidden>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="choose-bar">
+                <div class="choose-bar-inner">
+                    <h2>Choose ticket</h2>
+                    <img src="busLogo.svg" alt="Busitalia">
+                </div>
+            </div>
+
+            <main id="ticket-list" class="ticket-list" aria-label="Tickets">
+                <div class="ticket-list-inner">
+                    <div id="ticket-groups"></div>
+                    <div id="no-results" class="empty-search" hidden>
+                        <strong>No tickets found</strong>
+                        <span>Try another route, ticket name or city.</span>
+                    </div>
+                </div>
+            </main>
+
+            <div class="buy-sheet">
+                <div class="sheet-grab" aria-hidden="true"></div>
+                <button type="button" id="btn-buy" class="buy-btn" disabled aria-label="Buy tickets">
+                    <span class="buy-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9">
+                            <circle cx="9" cy="20" r="1.35"/>
+                            <circle cx="18" cy="20" r="1.35"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.5 3.5h2l2.15 11.1a2 2 0 001.97 1.65h8.1a2 2 0 001.96-1.6L20 7.2H6.1"/>
+                        </svg>
+                        <span>Buy</span>
+                    </span>
+                    <span id="cart-total">0,00 €</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= TICKET OPTIONS / VALIDATION SCREEN ================= -->
+    <section id="setup-screen" class="is-hidden" aria-label="Ticket options">
+        <div class="setup-shell">
+            <header class="setup-header">
+                <div class="setup-topbar">
+                    <button type="button" id="btn-setup-back" class="icon-btn" aria-label="Back to tickets">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <h1 class="screen-title">Ticket options</h1>
+                </div>
+            </header>
+
+            <div class="setup-body">
+                <p class="setup-intro">Check your tickets, choose the direction for one-way journeys and decide when to validate.</p>
+
+                <section class="panel" aria-labelledby="selected-heading">
+                    <div class="panel-head">
+                        <h2 class="panel-title" id="selected-heading">Selected tickets</h2>
+                        <button type="button" id="btn-edit-tickets" class="text-link">Edit</button>
+                    </div>
+                    <div id="summary-list" class="summary-list"></div>
+                    <div class="summary-total">
+                        <span>Total</span>
+                        <strong id="setup-total">0,00 €</strong>
+                    </div>
+                </section>
+
+                <section class="panel" id="direction-card" aria-labelledby="direction-heading">
+                    <div class="panel-head">
+                        <h2 class="panel-title" id="direction-heading">Direction</h2>
+                        <span class="panel-hint">One-way tickets</span>
+                    </div>
+                    <div id="direction-list" class="direction-list"></div>
+                    <p class="note">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>You can change the direction until the ticket is validated. Passes do not need a direction.</span>
+                    </p>
+                </section>
+
+                <section class="panel" aria-labelledby="validation-heading">
+                    <div class="panel-head">
+                        <h2 class="panel-title" id="validation-heading">Validation</h2>
+                    </div>
+
+                    <label class="radio-row">
+                        <input type="radio" name="activation" value="now" checked>
+                        <span class="radio-copy">
+                            <span class="radio-title">Activate now</span>
+                            <span class="radio-sub">The ticket is ready to use as soon as you buy it.</span>
+                        </span>
+                    </label>
+                    <label class="radio-row">
+                        <input type="radio" name="activation" value="schedule">
+                        <span class="radio-copy">
+                            <span class="radio-title">Schedule activation</span>
+                            <span class="radio-sub">Choose the date and time you want the ticket to start.</span>
+                        </span>
+                    </label>
+
+                    <div id="schedule-fields" class="schedule-fields" hidden>
+                        <label for="input-datetime">Activation date &amp; time</label>
+                        <input type="datetime-local" id="input-datetime">
+                        <p id="schedule-error" class="field-error" hidden>Choose a valid date and time.</p>
+                    </div>
+                </section>
+
+                <div class="purchase-wrap">
+                    <button type="button" id="btn-generate" class="purchase-btn">Purchase ticket</button>
+                </div>
+                <p class="setup-disclaimer">Demo ticket shop for this mockup site. No real ticket or payment is issued.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= ENLARGED QR FULLSCREEN OVERLAY ================= -->
+    <div id="enlarged-qr-screen" class="fixed inset-0 bg-white z-50 hidden flex-col items-center justify-center p-6">
+        <button id="btn-close-enlarged-qr" class="absolute top-5 right-5 text-gray-800 hover:text-black p-2 focus:outline-none" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        <div class="w-full max-w-[85vw] max-h-[85vh] sm:max-w-[380px] aspect-square flex items-center justify-center">
+            <img src="finalQr.svg" alt="Enlarged QR Code" class="w-full h-full object-contain" />
+        </div>
+    </div>
+
+    <!-- ================= ACTIVE TICKET SCREEN ================= -->
+    <div id="ticket-screen" class="fixed inset-0 hidden z-10 flex flex-col w-full h-[100dvh] overflow-hidden bg-[#3eb744]">
+
+        <!-- Header: Back Arrow + Active ticket -->
+        <div class="relative flex-none flex items-center justify-center px-4 pt-[calc(16px+env(safe-area-inset-top))] pb-2.5 max-w-md mx-auto w-full">
+            <button id="btn-back" class="absolute left-4 text-white p-1 focus:outline-none" aria-label="Go Back">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 stroke-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            <h2 class="text-white font-bold text-lg tracking-normal">Active ticket</h2>
+        </div>
+
+        <main id="ticket-scroll-area" class="min-h-0 flex-1 overflow-y-auto overscroll-contain no-scrollbar pb-[calc(72px+env(safe-area-inset-bottom))]">
+        <!-- Floating Ticket Card -->
+        <div class="mx-3.5 sm:mx-auto max-w-[430px] w-[calc(100%-1.75rem)] sm:w-full bg-white rounded-[10px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden">
+            <div>
+
+                <!-- Logo & Title Section -->
+                <div class="px-4 pt-4 pb-2.5">
+                    <img src="busLogo.svg" alt="Busitalia Logo" class="w-[90.25px] -ml-[1px] mb-1.5" />
+                    <h3 id="display-title" class="text-[#ab1c32] font-bold text-[clamp(15px,4.1vw,20px)] leading-tight tracking-wide uppercase">CORSA SEMPLICE CON BAGAGLIO</h3>
+                </div>
+
+                <!-- QR & Control Box (Grey ticket box with rounded corners and border) -->
+                <div class="mx-3.5 border border-gray-200/90 rounded-[8px] bg-[#f8f8f8] overflow-hidden">
+                    <!-- Control top bar -->
+                    <div class="flex justify-between items-center px-3.5 pt-3 pb-1">
+                        <div class="flex items-center text-[13.5px] font-semibold text-gray-800">
+                            <svg class="w-5 h-5 mr-2 text-[#ab1c32]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path>
+                            </svg>
+                            Control and validation
+                        </div>
+                        <svg class="w-4 h-4 text-[#ab1c32]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path>
+                        </svg>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div class="flex justify-center mt-3 mb-4">
+                        <img src="finalQr.svg" alt="QR Code" class="w-[82%] aspect-square mix-blend-multiply" />
+                    </div>
+
+                    <!-- Enlarge link -->
+                    <div class="text-center mb-3">
+                        <button id="btn-enlarge-qr" type="button" class="text-[#ab1c32] font-bold text-sm cursor-pointer focus:outline-none qr-enlarge-link"><span class="qr-enlarge-label"><span class="qr-enlarge-underline"><span class="qr-enlarge-text">Enlar</span></span><span class="qr-enlarge-text">g</span><span class="qr-enlarge-underline"><span class="qr-enlarge-text">e QRCode</span></span></span></button>
+                    </div>
+
+                    <!-- Timer Row -->
+                    <div class="flex justify-between items-center px-4 mb-3">
+                        <div class="flex items-center text-[#ab1c32] font-bold">
+                            <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span id="display-timer" class="text-[17px] tracking-wider tabular-nums font-bold">24:00:00</span>
+                        </div>
+                        <div class="flex items-center text-[#ab1c32] text-sm font-bold">
+                            <svg class="w-4 h-4 mr-1 text-[#ab1c32]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            834
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Animated Security Strip (Separated so it has no border or rounded edges) -->
+                <div class="mx-3.5 mb-3.5 h-[54px] overflow-hidden relative bg-white">
+                    <div class="absolute inset-y-0 w-[200%] animate-strip">
+<svg width="100%" height="100%" viewBox="0 0 2000 90" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="#ffffff"/>
+  <polygon points="0,30 100,30 50,0" fill="#9788e7"/>
+  <polygon points="50,0 150,0 100,30" fill="#ffffff"/>
+  <polygon points="50,60 150,60 100,30" fill="#a99bea"/>
+  <polygon points="0,30 100,30 50,60" fill="#ffffff"/>
+  <polygon points="0,90 100,90 50,60" fill="#c3bde7"/>
+  <polygon points="50,60 150,60 100,90" fill="#ffffff"/>
+
+  <polygon points="100,30 200,30 150,0" fill="#c3bde7"/>
+  <polygon points="150,0 250,0 200,30" fill="#ffffff"/>
+  <polygon points="150,60 250,60 200,30" fill="#897be4"/>
+  <polygon points="100,30 200,30 150,60" fill="#ffffff"/>
+  <polygon points="100,90 200,90 150,60" fill="#9788e7"/>
+  <polygon points="150,60 250,60 200,90" fill="#ffffff"/>
+
+  <polygon points="200,30 300,30 250,0" fill="#9788e7"/>
+  <polygon points="250,0 350,0 300,30" fill="#ffffff"/>
+  <polygon points="250,60 350,60 300,30" fill="#a99bea"/>
+  <polygon points="200,30 300,30 250,60" fill="#ffffff"/>
+  <polygon points="200,90 300,90 250,60" fill="#c3bde7"/>
+  <polygon points="250,60 350,60 300,90" fill="#ffffff"/>
+
+  <polygon points="300,30 400,30 350,0" fill="#c3bde7"/>
+  <polygon points="350,0 450,0 400,30" fill="#ffffff"/>
+  <polygon points="350,60 450,60 400,30" fill="#897be4"/>
+  <polygon points="300,30 400,30 350,60" fill="#ffffff"/>
+  <polygon points="300,90 400,90 350,60" fill="#9788e7"/>
+  <polygon points="350,60 450,60 400,90" fill="#ffffff"/>
+
+  <polygon points="400,30 500,30 450,0" fill="#9788e7"/>
+  <polygon points="450,0 550,0 500,30" fill="#ffffff"/>
+  <polygon points="450,60 550,60 500,30" fill="#a99bea"/>
+  <polygon points="400,30 500,30 450,60" fill="#ffffff"/>
+  <polygon points="400,90 500,90 450,60" fill="#c3bde7"/>
+  <polygon points="450,60 550,60 500,90" fill="#ffffff"/>
+
+  <polygon points="500,30 600,30 550,0" fill="#c3bde7"/>
+  <polygon points="550,0 650,0 600,30" fill="#ffffff"/>
+  <polygon points="550,60 650,60 600,30" fill="#897be4"/>
+  <polygon points="500,30 600,30 550,60" fill="#ffffff"/>
+  <polygon points="500,90 600,90 550,60" fill="#9788e7"/>
+  <polygon points="550,60 650,60 600,90" fill="#ffffff"/>
+
+  <polygon points="600,30 700,30 650,0" fill="#9788e7"/>
+  <polygon points="650,0 750,0 700,30" fill="#ffffff"/>
+  <polygon points="650,60 750,60 700,30" fill="#a99bea"/>
+  <polygon points="600,30 700,30 650,60" fill="#ffffff"/>
+  <polygon points="600,90 700,90 650,60" fill="#c3bde7"/>
+  <polygon points="650,60 750,60 700,90" fill="#ffffff"/>
+
+  <polygon points="700,30 800,30 750,0" fill="#c3bde7"/>
+  <polygon points="750,0 850,0 800,30" fill="#ffffff"/>
+  <polygon points="750,60 850,60 800,30" fill="#897be4"/>
+  <polygon points="700,30 800,30 750,60" fill="#ffffff"/>
+  <polygon points="700,90 800,90 750,60" fill="#9788e7"/>
+  <polygon points="750,60 850,60 800,90" fill="#ffffff"/>
+
+  <polygon points="800,30 900,30 850,0" fill="#9788e7"/>
+  <polygon points="850,0 950,0 900,30" fill="#ffffff"/>
+  <polygon points="850,60 950,60 900,30" fill="#a99bea"/>
+  <polygon points="800,30 900,30 850,60" fill="#ffffff"/>
+  <polygon points="800,90 900,90 850,60" fill="#c3bde7"/>
+  <polygon points="850,60 950,60 900,90" fill="#ffffff"/>
+
+  <polygon points="900,30 1000,30 950,0" fill="#c3bde7"/>
+  <polygon points="950,0 1050,0 1000,30" fill="#ffffff"/>
+  <polygon points="950,60 1050,60 1000,30" fill="#897be4"/>
+  <polygon points="900,30 1000,30 950,60" fill="#ffffff"/>
+  <polygon points="900,90 1000,90 950,60" fill="#9788e7"/>
+  <polygon points="950,60 1050,60 1000,90" fill="#ffffff"/>
+
+  <polygon points="1000,30 1100,30 1050,0" fill="#9788e7"/>
+  <polygon points="1050,0 1150,0 1100,30" fill="#ffffff"/>
+  <polygon points="1050,60 1150,60 1100,30" fill="#a99bea"/>
+  <polygon points="1000,30 1100,30 1050,60" fill="#ffffff"/>
+  <polygon points="1000,90 1100,90 1050,60" fill="#c3bde7"/>
+  <polygon points="1050,60 1150,60 1100,90" fill="#ffffff"/>
+
+  <polygon points="1100,30 1200,30 1150,0" fill="#c3bde7"/>
+  <polygon points="1150,0 1250,0 1200,30" fill="#ffffff"/>
+  <polygon points="1150,60 1250,60 1200,30" fill="#897be4"/>
+  <polygon points="1100,30 1200,30 1150,60" fill="#ffffff"/>
+  <polygon points="1100,90 1200,90 1150,60" fill="#9788e7"/>
+  <polygon points="1150,60 1250,60 1200,90" fill="#ffffff"/>
+
+  <polygon points="1200,30 1300,30 1250,0" fill="#9788e7"/>
+  <polygon points="1250,0 1350,0 1300,30" fill="#ffffff"/>
+  <polygon points="1250,60 1350,60 1300,30" fill="#a99bea"/>
+  <polygon points="1200,30 1300,30 1250,60" fill="#ffffff"/>
+  <polygon points="1200,90 1300,90 1250,60" fill="#c3bde7"/>
+  <polygon points="1250,60 1350,60 1300,90" fill="#ffffff"/>
+
+  <polygon points="1300,30 1400,30 1350,0" fill="#c3bde7"/>
+  <polygon points="1350,0 1450,0 1400,30" fill="#ffffff"/>
+  <polygon points="1350,60 1450,60 1400,30" fill="#897be4"/>
+  <polygon points="1300,30 1400,30 1350,60" fill="#ffffff"/>
+  <polygon points="1300,90 1400,90 1350,60" fill="#9788e7"/>
+  <polygon points="1350,60 1450,60 1400,90" fill="#ffffff"/>
+
+  <polygon points="1400,30 1500,30 1450,0" fill="#9788e7"/>
+  <polygon points="1450,0 1550,0 1500,30" fill="#ffffff"/>
+  <polygon points="1450,60 1550,60 1500,30" fill="#a99bea"/>
+  <polygon points="1400,30 1500,30 1450,60" fill="#ffffff"/>
+  <polygon points="1400,90 1500,90 1450,60" fill="#c3bde7"/>
+  <polygon points="1450,60 1550,60 1500,90" fill="#ffffff"/>
+
+  <polygon points="1500,30 1600,30 1550,0" fill="#c3bde7"/>
+  <polygon points="1550,0 1650,0 1600,30" fill="#ffffff"/>
+  <polygon points="1550,60 1650,60 1600,30" fill="#897be4"/>
+  <polygon points="1500,30 1600,30 1550,60" fill="#ffffff"/>
+  <polygon points="1500,90 1600,90 1550,60" fill="#9788e7"/>
+  <polygon points="1550,60 1650,60 1600,90" fill="#ffffff"/>
+
+  <polygon points="1600,30 1700,30 1650,0" fill="#9788e7"/>
+  <polygon points="1650,0 1750,0 1700,30" fill="#ffffff"/>
+  <polygon points="1650,60 1750,60 1700,30" fill="#a99bea"/>
+  <polygon points="1600,30 1700,30 1650,60" fill="#ffffff"/>
+  <polygon points="1600,90 1700,90 1650,60" fill="#c3bde7"/>
+  <polygon points="1650,60 1750,60 1700,90" fill="#ffffff"/>
+
+  <polygon points="1700,30 1800,30 1750,0" fill="#c3bde7"/>
+  <polygon points="1750,0 1850,0 1800,30" fill="#ffffff"/>
+  <polygon points="1750,60 1850,60 1800,30" fill="#897be4"/>
+  <polygon points="1700,30 1800,30 1750,60" fill="#ffffff"/>
+  <polygon points="1700,90 1800,90 1750,60" fill="#9788e7"/>
+  <polygon points="1750,60 1850,60 1800,90" fill="#ffffff"/>
+
+  <polygon points="1800,30 1900,30 1850,0" fill="#9788e7"/>
+  <polygon points="1850,0 1950,0 1900,30" fill="#ffffff"/>
+  <polygon points="1850,60 1950,60 1900,30" fill="#a99bea"/>
+  <polygon points="1800,30 1900,30 1850,60" fill="#ffffff"/>
+  <polygon points="1800,90 1900,90 1850,60" fill="#c3bde7"/>
+  <polygon points="1850,60 1950,60 1900,90" fill="#ffffff"/>
+
+  <polygon points="1900,30 2000,30 1950,0" fill="#c3bde7"/>
+  <polygon points="1950,0 2050,0 2000,30" fill="#ffffff"/>
+  <polygon points="1950,60 2050,60 2000,30" fill="#897be4"/>
+  <polygon points="1900,30 2000,30 1950,60" fill="#ffffff"/>
+  <polygon points="1900,90 2000,90 1950,60" fill="#9788e7"/>
+  <polygon points="1950,60 2050,60 2000,90" fill="#ffffff"/>
+</svg>
+                    </div>
+                </div>
+
+                <!-- Green Route Info Box -->
+                <div class="mx-3.5 mb-4 bg-[#3eb744] text-white rounded-[6px] p-3.5 text-[13px] leading-snug shadow-sm">
+                    <div id="route-linear">
+                        <div class="mb-1 flex flex-wrap">
+                            <span class="font-normal opacity-90 mr-1.5">From</span>
+                            <span id="display-from" class="font-bold uppercase tracking-tight"></span>
+                        </div>
+                        <div class="mb-2.5 flex flex-wrap">
+                            <span class="font-normal opacity-90 mr-1.5">to</span>
+                            <span id="display-to" class="font-bold uppercase tracking-tight"></span>
+                        </div>
+                    </div>
+                    <div id="route-zone" class="mb-2.5 flex-wrap" hidden>
+                        <span class="font-normal opacity-90 mr-1.5">Zone</span>
+                        <span id="display-zone" class="font-bold uppercase tracking-tight"></span>
+                    </div>
+                    <div class="flex flex-wrap">
+                        <span class="font-normal opacity-90 mr-1.5">Activated on:</span>
+                        <span id="display-activated" class="font-bold tracking-tight"></span>
+                    </div>
+                </div>
+
+                <!-- Extra Details Section -->
+                <div class="mx-4 pb-6 space-y-3.5 text-[13px]">
+                    <div id="quantity-wrap" hidden>
+                        <div class="flex justify-between items-center">
+                            <div class="text-gray-500">Tickets</div>
+                            <div class="font-bold text-gray-800" id="display-quantity">1</div>
+                        </div>
+                        <hr class="border-gray-200 mt-3.5">
+                    </div>
+
+                    <div>
+                        <div class="text-gray-500 mb-0.5">Issued on:</div>
+                        <div class="font-bold text-gray-800 tracking-tight" id="display-issued">--</div>
+                    </div>
+
+                    <hr class="border-gray-200">
+
+                    <div class="flex justify-between items-center">
+                        <div class="text-gray-500 text-sm">Price</div>
+                        <div class="font-bold text-gray-800 text-base">&euro; <span id="display-price">0,00</span></div>
+                    </div>
+
+                    <hr class="border-gray-200">
+
+                    <div class="flex justify-between items-center">
+                        <div class="text-gray-800 font-bold text-[13.5px]">Details</div>
+                        <button id="btn-read-all" type="button" aria-expanded="false" class="text-[#ab1c32] font-bold flex items-center gap-1.5 text-[13.5px]">
+                            Read all
+                            <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <div class="text-gray-500">Ticket code:</div>
+                        <div class="text-gray-500 font-medium" id="display-code">7382/6097492</div>
+                    </div>
+                    <p id="ticket-disclaimer" class="hidden rounded-md bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">This is a ticket mockup for educational purposes only and is not a valid ticket or proof of purchase.</p>
+                </div>
+
+            </div>
+        </div>
+        </main>
+        <div aria-hidden="true" class="absolute inset-x-0 bottom-0 z-20 h-[calc(48px+env(safe-area-inset-bottom))] bg-white"></div>
+    </div>
+
+    <!-- ================= INFO SHEET ================= -->
+    <div id="info-modal" class="info-modal" hidden>
+        <div class="info-backdrop" data-close-info></div>
+        <div class="info-card" role="dialog" aria-modal="true" aria-labelledby="info-title">
+            <div class="sheet-grab" aria-hidden="true"></div>
+            <div class="info-head">
+                <span class="info-mark" aria-hidden="true">i</span>
+                <h3 class="info-title" id="info-title"></h3>
+            </div>
+            <div class="info-meta">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span id="info-validity"></span>
+            </div>
+            <p class="info-desc" id="info-desc"></p>
+            <div class="info-price">
+                <span>Price</span>
+                <strong id="info-price"></strong>
+            </div>
+            <button type="button" class="info-close" data-close-info>Close</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" hidden></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        'use strict';
+
+        /* ------------------------------------------------------------------
+           Ticket catalogue
+           ------------------------------------------------------------------ */
+        const mk = (id, group, title, validity, price, kind, from, to) => ({
+            id, group, title, validity, price, kind, from, to
+        });
+
+        const CORSA_PADOVA = [
+            ['01', 25, 1.70], ['02', 35, 2.60], ['03', 50, 3.40], ['04', 65, 4.10],
+            ['05', 85, 5.10], ['06', 95, 5.70], ['07', 105, 6.70], ['08', 115, 7.40],
+            ['09', 125, 8.00], ['10', 135, 8.60], ['11', 145, 9.70], ['12', 155, 10.30],
+            ['13', 165, 11.40]
+        ];
+
+        const CORSA_ROVIGO = [
+            ['01', 25, 1.70], ['02', 35, 2.90], ['03', 50, 3.70], ['04', 65, 4.40],
+            ['05', 85, 5.50], ['06', 95, 6.20], ['07', 105, 7.20], ['08', 115, 7.90],
+            ['09', 125, 8.60], ['10', 135, 9.20], ['11', 145, 10.30]
+        ];
+
+        const extraPadova = {
+            name: 'Extraurbano Padova',
+            items: [
+                mk('extra-pd-jesolo', 'Extraurbano Padova', 'PADOVA – JESOLO CON BAGAGLIO', 'Valid for 135 minutes', 11.60, 'oneway', 'PADOVA', 'JESOLO'),
+                mk('extra-pd-jesolo-montegrotto', 'Extraurbano Padova', 'MONTEGROTTO – JESOLO CON BAGAGLIO', 'Valid for 135 minutes', 13.80, 'oneway', 'MONTEGROTTO TERME', 'JESOLO')
+            ]
+        };
+        CORSA_PADOVA.forEach(([cl, minutes, price]) => {
+            extraPadova.items.push(mk(
+                'corsa-pd-' + cl,
+                'Extraurbano Padova',
+                'CORSA SEMPLICE PADOVA CL. ' + cl,
+                'Valid for ' + minutes + ' minutes',
+                price,
+                'oneway',
+                'PADOVA',
+                'VENEZIA'
+            ));
+        });
+
+        const extraRovigo = {
+            name: 'Extraurbano Rovigo',
+            items: []
+        };
+        CORSA_ROVIGO.forEach(([cl, minutes, price]) => {
+            extraRovigo.items.push(mk(
+                'corsa-ro-' + cl,
+                'Extraurbano Rovigo',
+                'CORSA SEMPLICE ROVIGO CL. ' + cl,
+                'Valid for ' + minutes + ' minutes',
+                price,
+                'oneway',
+                'ROVIGO',
+                'PADOVA'
+            ));
+        });
+
+        const GROUPS = [
+            {
+                name: 'Urbano Padova TU1',
+                items: [
+                    mk('pd-tu1-90', 'Urbano Padova TU1', "BIGL. URB. PD TU1 DA 90'", 'Valid for 90 minutes', 1.70, 'urban', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu1-famiglia', 'Urbano Padova TU1', 'BIGL. FAMIGLIA PD TU1 6H X 5 PERS', 'Valid for 360 minutes', 3.90, 'pass', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu1-giornaliero', 'Urbano Padova TU1', 'BIGL. URB. PD TU1 GIORNALIERO', 'Valid for 1 day', 4.70, 'pass', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu1-carnet', 'Urbano Padova TU1', "CARNET URB. PD TU1 DA 100'", 'Valid for 90 minutes', 15.60, 'carnet', 'PADOVA', 'PADOVA')
+                ]
+            },
+            {
+                name: 'Conurbazione Padova TU2',
+                items: [
+                    mk('pd-tu2-turistico3', 'Conurbazione Padova TU2', 'BIGL. TURISTICO 3 GIORNI', 'Valid for 3 days', 12.50, 'pass', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu2-turistico5', 'Conurbazione Padova TU2', 'BIGL. TURISTICO 5 GIORNI', 'Valid for 5 days', 21.00, 'pass', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu2-100', 'Conurbazione Padova TU2', "BIGL. URB. PD TU2 DA 100'", 'Valid for 100 minutes', 2.00, 'urban', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu2-carnet', 'Conurbazione Padova TU2', "CARNET URB. PD TU2 DA 100'", 'Valid for 100 minutes', 18.20, 'carnet', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu2-famiglia', 'Conurbazione Padova TU2', 'BIGL. FAMIGLIA PD TU2 6H X 5 PERS', 'Valid for 360 minutes', 4.60, 'pass', 'PADOVA', 'PADOVA'),
+                    mk('pd-tu2-giornaliero', 'Conurbazione Padova TU2', 'BIGL. URB. PD TU2 GIORNALIERO', 'Valid for 1 day', 4.90, 'pass', 'PADOVA', 'PADOVA')
+                ]
+            },
+            {
+                name: 'Urbano Rovigo',
+                items: [
+                    mk('ro-urbano-90', 'Urbano Rovigo', "BIGLIETTO URBANO ROVIGO (VALE 90')", 'Valid for 90 minutes', 1.70, 'urban', 'ROVIGO', 'ROVIGO')
+                ]
+            },
+            extraPadova,
+            extraRovigo,
+            {
+                name: 'Aeroporto Marco Polo Venezia',
+                items: [
+                    mk('apt-pd', 'Aeroporto Marco Polo Venezia', 'PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 13.00, 'oneway', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-montegrotto', 'Aeroporto Marco Polo Venezia', 'MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 15.00, 'oneway', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-under12-pd', 'Aeroporto Marco Polo Venezia', 'UNDER 12 PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 6.50, 'oneway', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-under12-montegrotto', 'Aeroporto Marco Polo Venezia', 'UNDER 12 MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 90 minutes', 7.50, 'oneway', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-ar-pd', 'Aeroporto Marco Polo Venezia', 'A/R IN GIORNATA PADOVA-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 1 day', 23.00, 'roundtrip', 'PADOVA', 'AEROPORTO VENEZIA MARCO POLO'),
+                    mk('apt-ar-montegrotto', 'Aeroporto Marco Polo Venezia', 'A/R IN GIORNATA MONTEGROTTO/ABANO-AEROPORTO VENEZIA MARCO POLO CON BAGAGLIO', 'Valid for 1 day', 25.00, 'roundtrip', 'MONTEGROTTO TERME', 'AEROPORTO VENEZIA MARCO POLO')
+                ]
+            },
+            {
+                name: 'Colli Euganei',
+                items: [
+                    mk('colli-abano-montegrotto', 'Colli Euganei', 'ABANO-MONTEGROTTO 100 MIN', 'Valid for 100 minutes', 2.50, 'oneway', 'ABANO TERME', 'MONTEGROTTO TERME')
+                ]
+            }
+        ];
+
+        const TICKETS = new Map();
+        GROUPS.forEach(group => {
+            group.items.forEach(item => {
+                item.group = group.name;
+                TICKETS.set(item.id, item);
+            });
+        });
+
+        /* ------------------------------------------------------------------
+           State & helpers
+           ------------------------------------------------------------------ */
+        const state = {
+            cart: new Map(),
+            directions: new Map(),
+            openGroup: GROUPS[0].name,
+            query: '',
+            activation: 'now',
+            scheduleValue: '',
+            lastListScroll: 0
+        };
+
+        const esc = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[character]);
+
+        const money = (value) => value.toFixed(2).replace('.', ',') + ' €';
+        const moneyPlain = (value) => value.toFixed(2).replace('.', ',');
+
+        const cartLines = () => Array.from(state.cart.entries()).map(([id, qty]) => ({
+            item: TICKETS.get(id),
+            qty
+        }));
+
+        const cartCount = () => cartLines().reduce((sum, line) => sum + line.qty, 0);
+        const cartTotal = () => cartLines().reduce((sum, line) => sum + line.item.price * line.qty, 0);
+
+        const isOneWay = (item) => item.kind === 'oneway';
+
+        const ensureDirection = (item) => {
+            if (!state.directions.has(item.id)) {
+                state.directions.set(item.id, { from: item.from, to: item.to });
+            }
+            return state.directions.get(item.id);
+        };
+
+        const parseValidityMs = (validity) => {
+            const match = /(\d+)\s*(minute|minutes|day|days)/i.exec(validity);
+            if (!match) return 24 * 60 * 60 * 1000;
+            const amount = Number(match[1]);
+            return /day/i.test(match[2]) ? amount * 86400000 : amount * 60000;
+        };
+
+        const pad = (number) => String(number).padStart(2, '0');
+
+        const toLocalInput = (date) => {
+            return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) +
+                'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+        };
+
+        const formatDateLong = (date) => {
+            return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + date.getFullYear() +
+                ' - ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds());
+        };
+
+        const formatDateShort = (date) => {
+            return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + date.getFullYear() +
+                ' - ' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+        };
+
+        const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        /* ------------------------------------------------------------------
+           Elements
+           ------------------------------------------------------------------ */
+        const ticketsScreen = document.getElementById('tickets-screen');
+        const setupScreen = document.getElementById('setup-screen');
+        const ticketScreen = document.getElementById('ticket-screen');
+
+        const groupsEl = document.getElementById('ticket-groups');
+        const noResultsEl = document.getElementById('no-results');
+        const ticketList = document.getElementById('ticket-list');
+        const searchInput = document.getElementById('ticket-search');
+        const searchClear = document.getElementById('search-clear');
+
+        const btnBuy = document.getElementById('btn-buy');
+        const cartTotalEl = document.getElementById('cart-total');
+
+        const summaryList = document.getElementById('summary-list');
+        const setupTotal = document.getElementById('setup-total');
+        const directionCard = document.getElementById('direction-card');
+        const directionList = document.getElementById('direction-list');
+        const btnGenerate = document.getElementById('btn-generate');
+        const inputDatetime = document.getElementById('input-datetime');
+        const scheduleFields = document.getElementById('schedule-fields');
+        const scheduleError = document.getElementById('schedule-error');
+
+        const displayTitle = document.getElementById('display-title');
+        const displayFrom = document.getElementById('display-from');
+        const displayTo = document.getElementById('display-to');
+        const displayZone = document.getElementById('display-zone');
+        const routeLinear = document.getElementById('route-linear');
+        const routeZone = document.getElementById('route-zone');
+        const displayActivated = document.getElementById('display-activated');
+        const displayIssued = document.getElementById('display-issued');
+        const displayPrice = document.getElementById('display-price');
+        const displayCode = document.getElementById('display-code');
+        const displayTimer = document.getElementById('display-timer');
+        const quantityWrap = document.getElementById('quantity-wrap');
+        const displayQuantity = document.getElementById('display-quantity');
+
+        const infoModal = document.getElementById('info-modal');
+        const infoTitle = document.getElementById('info-title');
+        const infoValidity = document.getElementById('info-validity');
+        const infoDesc = document.getElementById('info-desc');
+        const infoPrice = document.getElementById('info-price');
+
+        const toastEl = document.getElementById('toast');
+
+        let timerInterval = null;
+        let expirationTime = null;
+        let toastTimeout = null;
+
+        /* ------------------------------------------------------------------
+           Icons
+           ------------------------------------------------------------------ */
+        const clockIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+        const ticketIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>';
+        const cartIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="20" r="1.35"/><circle cx="18" cy="20" r="1.35"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 3.5h2l2.15 11.1a2 2 0 001.97 1.65h8.1a2 2 0 001.96-1.6L20 7.2H6.1"/></svg>';
+        const swapIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.1"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>';
+        const chevronIcon = '<svg class="chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>';
+
+        /* ------------------------------------------------------------------
+           Ticket list
+           ------------------------------------------------------------------ */
+        const itemHTML = (item) => {
+            const qty = state.cart.get(item.id) || 0;
+            return '' +
+                '<article class="ticket-item">' +
+                    '<div class="ticket-title-row">' +
+                        '<h3 class="ticket-title">' + esc(item.title) + '</h3>' +
+                        '<button type="button" class="info-btn" data-info="' + item.id + '" aria-label="Information about ' + esc(item.title) + '">i</button>' +
+                    '</div>' +
+                    '<div class="ticket-validity">' + clockIcon + '<span>' + esc(item.validity) + '</span></div>' +
+                    '<div class="ticket-price-row">' +
+                        '<div class="price-label">' + ticketIcon + '<span>Price</span></div>' +
+                        '<button type="button" class="cart-pill" data-cart="' + item.id + '" aria-pressed="' + (qty > 0) + '" aria-label="' + (qty > 0 ? 'Remove ' : 'Add ') + esc(item.title) + (qty > 0 ? ' from cart' : ' to cart') + '">' +
+                            cartIcon +
+                            '<span class="pill-price">' + money(item.price) + '</span>' +
+                            '<span class="pill-qty"' + (qty > 1 ? '' : ' hidden') + '>' + (qty > 1 ? qty : '') + '</span>' +
+                        '</button>' +
+                    '</div>' +
+                '</article>';
+        };
+
+        const renderGroups = () => {
+            const query = state.query.trim().toLowerCase();
+            let visible = 0;
+
+            groupsEl.innerHTML = GROUPS.map((group) => {
+                const items = group.items.filter((item) => {
+                    if (!query) return true;
+                    return item.title.toLowerCase().includes(query) || group.name.toLowerCase().includes(query);
+                });
+                if (!items.length) return '';
+
+                visible += items.length;
+                const open = query ? true : state.openGroup === group.name;
+
+                return '' +
+                    '<section class="ticket-group' + (open ? ' open' : '') + '">' +
+                        '<button type="button" class="group-head" data-group-toggle="' + esc(group.name) + '" aria-expanded="' + open + '">' +
+                            '<span>' + esc(group.name) + '</span>' +
+                            chevronIcon +
+                        '</button>' +
+                        '<div class="group-items"' + (open ? '' : ' hidden') + '>' +
+                            items.map(itemHTML).join('') +
+                        '</div>' +
+                    '</section>';
+            }).join('');
+
+            noResultsEl.hidden = visible > 0;
+            updateCartUI();
+        };
+
+        const updateCartUI = () => {
+            document.querySelectorAll('.cart-pill').forEach((button) => {
+                const id = button.dataset.cart;
+                const qty = state.cart.get(id) || 0;
+                button.setAttribute('aria-pressed', qty > 0 ? 'true' : 'false');
+                button.setAttribute('aria-label', (qty > 0 ? 'Remove ' : 'Add ') + TICKETS.get(id).title + (qty > 0 ? ' from cart' : ' to cart'));
+
+                const badge = button.querySelector('.pill-qty');
+                if (qty > 1) {
+                    badge.hidden = false;
+                    badge.textContent = qty;
+                } else {
+                    badge.hidden = true;
+                    badge.textContent = '';
+                }
+            });
+
+            const count = cartCount();
+            cartTotalEl.textContent = money(cartTotal());
+            btnBuy.disabled = count === 0;
+            btnBuy.classList.toggle('is-active', count > 0);
+            btnBuy.setAttribute('aria-label', count === 0 ? 'Buy tickets' : 'Buy ' + count + ' ticket' + (count === 1 ? '' : 's') + ' for ' + money(cartTotal()));
+        };
+
+        const setCartQty = (id, qty) => {
+            if (qty <= 0) {
+                state.cart.delete(id);
+            } else {
+                state.cart.set(id, Math.min(10, qty));
+            }
+            updateCartUI();
+        };
+
+        const toggleCart = (id) => {
+            if (state.cart.has(id)) {
+                state.cart.delete(id);
+            } else {
+                state.cart.set(id, 1);
+                ensureDirection(TICKETS.get(id));
+            }
+            updateCartUI();
+        };
+
+        /* ------------------------------------------------------------------
+           Info sheet
+           ------------------------------------------------------------------ */
+        const infoCopy = (item) => {
+            const descriptions = {
+                urban: 'City ticket for Busitalia services in the selected urban area. Validate it before boarding.',
+                pass: 'Multi-day pass. No direction selection is required — simply validate it when you start using it.',
+                carnet: 'Carnet of 10 rides on the selected urban service. Keep the QR code with you while travelling.',
+                oneway: 'Single-journey ticket in one direction. You can choose the direction before validation.',
+                roundtrip: 'Return ticket for the same day. Both directions are included, so there is no direction to select.'
+            };
+            return descriptions[item.kind] || 'Busitalia ticket for the selected service.';
+        };
+
+        const openInfo = (id) => {
+            const item = TICKETS.get(id);
+            if (!item) return;
+            infoTitle.textContent = item.title;
+            infoValidity.textContent = item.validity;
+            infoDesc.textContent = infoCopy(item) + ' (' + item.group + '.)';
+            infoPrice.textContent = money(item.price);
+            infoModal.hidden = false;
+            document.body.style.overflow = 'hidden';
+        };
+
+        const closeInfo = () => {
+            infoModal.hidden = true;
+            document.body.style.overflow = '';
+        };
+
+        /* ------------------------------------------------------------------
+           Ticket options screen
+           ------------------------------------------------------------------ */
+        const defaultScheduleValue = () => {
+            const date = new Date(Date.now() + 10 * 60000);
+            date.setSeconds(0, 0);
+            return toLocalInput(date);
+        };
+
+        const renderSetup = () => {
+            const lines = cartLines();
+
+            summaryList.innerHTML = lines.map(({ item, qty }) => (
+                '<div class="summary-row">' +
+                    '<div class="summary-main">' +
+                        '<div class="summary-name">' + esc(item.title) + '</div>' +
+                        '<div class="summary-meta">' + esc(item.validity) + ' · ' + money(item.price) + ' each</div>' +
+                    '</div>' +
+                    '<div class="summary-actions">' +
+                        '<div class="summary-line-total">' + money(item.price * qty) + '</div>' +
+                        '<div class="stepper">' +
+                            '<button type="button" class="qty-btn" data-dec="' + item.id + '" aria-label="Remove one ticket"' + (qty <= 1 ? ' disabled' : '') + '>−</button>' +
+                            '<span class="qty-num">' + qty + '</span>' +
+                            '<button type="button" class="qty-btn" data-inc="' + item.id + '" aria-label="Add one ticket"' + (qty >= 10 ? ' disabled' : '') + '>+</button>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            )).join('');
+
+            setupTotal.textContent = money(cartTotal());
+
+            const oneWays = lines.filter((line) => isOneWay(line.item));
+            directionCard.hidden = oneWays.length === 0;
+
+            directionList.innerHTML = oneWays.map(({ item }) => {
+                const direction = ensureDirection(item);
+                return '' +
+                    '<div class="direction-block">' +
+                        '<div class="direction-name">' + esc(item.title) + '</div>' +
+                        '<div class="station-fields">' +
+                            '<div class="field">' +
+                                '<label for="from-' + item.id + '">From</label>' +
+                                '<input type="text" id="from-' + item.id + '" class="dir-input dir-from" data-id="' + item.id + '" value="' + esc(direction.from) + '" autocomplete="off" spellcheck="false">' +
+                            '</div>' +
+                            '<div class="field">' +
+                                '<label for="to-' + item.id + '">To</label>' +
+                                '<input type="text" id="to-' + item.id + '" class="dir-input dir-to" data-id="' + item.id + '" value="' + esc(direction.to) + '" autocomplete="off" spellcheck="false">' +
+                            '</div>' +
+                            '<button type="button" class="swap-btn" data-swap="' + item.id + '" aria-label="Swap from and to">' + swapIcon + '</button>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+
+            document.querySelectorAll('input[name="activation"]').forEach((radio) => {
+                radio.checked = radio.value === state.activation;
+            });
+            scheduleFields.hidden = state.activation !== 'schedule';
+            if (state.activation === 'schedule' && !state.scheduleValue) {
+                state.scheduleValue = defaultScheduleValue();
+            }
+            inputDatetime.value = state.scheduleValue || '';
+            inputDatetime.min = toLocalInput(new Date());
+            scheduleError.hidden = true;
+
+            btnGenerate.disabled = lines.length === 0;
+            btnGenerate.textContent = 'Purchase ticket · ' + money(cartTotal());
+        };
+
+        const openSetup = () => {
+            if (!state.cart.size) return;
+            state.lastListScroll = ticketList.scrollTop;
+            renderSetup();
+            ticketsScreen.classList.add('is-hidden');
+            setupScreen.classList.remove('is-hidden');
+            setupScreen.scrollTop = 0;
+        };
+
+        const backToTickets = () => {
+            if (state.activation === 'schedule') {
+                state.scheduleValue = inputDatetime.value;
+            }
+            setupScreen.classList.add('is-hidden');
+            ticketsScreen.classList.remove('is-hidden');
+            requestAnimationFrame(() => {
+                ticketList.scrollTop = state.lastListScroll;
+            });
+        };
+
+        /* ------------------------------------------------------------------
+           Purchase / active ticket
+           ------------------------------------------------------------------ */
+        const purchase = () => {
+            const lines = cartLines();
+            if (!lines.length) return;
+
+            let activation = new Date();
+            if (state.activation === 'schedule') {
+                if (!inputDatetime.value) {
+                    scheduleError.hidden = false;
+                    inputDatetime.focus();
+                    return;
+                }
+                activation = new Date(inputDatetime.value);
+                if (Number.isNaN(activation.getTime())) {
+                    scheduleError.hidden = false;
+                    inputDatetime.focus();
+                    return;
+                }
+            }
+
+            scheduleError.hidden = true;
+
+            const first = lines[0].item;
+            const totalQty = lines.reduce((sum, line) => sum + line.qty, 0);
+            const total = cartTotal();
+            const zoneType = ['pass', 'urban', 'carnet'].indexOf(first.kind) !== -1;
+            const direction = isOneWay(first) ? ensureDirection(first) : null;
+
+            displayTitle.textContent = first.title;
+
+            if (zoneType) {
+                routeLinear.hidden = true;
+                routeZone.hidden = false;
+                displayZone.textContent = first.group;
+            } else {
+                routeZone.hidden = true;
+                routeLinear.hidden = false;
+                displayFrom.textContent = direction ? direction.from : first.from;
+                displayTo.textContent = direction ? direction.to : first.to;
+            }
+
+            displayActivated.textContent = formatDateLong(activation);
+            displayIssued.textContent = formatDateShort(new Date(activation.getTime() - 60000));
+            displayPrice.textContent = moneyPlain(total);
+            displayCode.textContent = randomInt(1000, 9999) + '/' + randomInt(1000000, 9999999);
+
+            quantityWrap.hidden = totalQty <= 1;
+            if (totalQty > 1) {
+                displayQuantity.textContent = String(totalQty);
+            }
+
+            expirationTime = activation.getTime() + parseValidityMs(first.validity);
+            if (timerInterval) clearInterval(timerInterval);
+            updateClock();
+            timerInterval = setInterval(updateClock, 1000);
+
+            setupScreen.classList.add('is-hidden');
+            ticketScreen.classList.remove('hidden');
+            window.scrollTo(0, 0);
+            document.getElementById('ticket-scroll-area').scrollTop = 0;
+            document.getElementById('btn-read-all').setAttribute('aria-expanded', 'false');
+            document.getElementById('ticket-disclaimer').classList.add('hidden');
+        };
+
+        const updateClock = () => {
+            if (!expirationTime) return;
+            const remaining = expirationTime - Date.now();
+
+            if (remaining <= 0) {
+                displayTimer.textContent = '00:00:00';
+                if (timerInterval) clearInterval(timerInterval);
+                return;
+            }
+
+            const totalSeconds = Math.floor(remaining / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            displayTimer.textContent = pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+        };
+
+        /* ------------------------------------------------------------------
+           Toast
+           ------------------------------------------------------------------ */
+        const showToast = (message) => {
+            toastEl.textContent = message;
+            toastEl.hidden = false;
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastEl.hidden = true;
+            }, 2200);
+        };
+
+        /* ------------------------------------------------------------------
+           Events
+           ------------------------------------------------------------------ */
+        groupsEl.addEventListener('click', (event) => {
+            const groupButton = event.target.closest('[data-group-toggle]');
+            if (groupButton) {
+                const name = groupButton.dataset.groupToggle;
+                if (state.query) {
+                    state.query = '';
+                    searchInput.value = '';
+                    searchClear.hidden = true;
+                    state.openGroup = name;
+                } else {
+                    state.openGroup = state.openGroup === name ? null : name;
+                }
+                renderGroups();
+                return;
+            }
+
+            const cartButton = event.target.closest('[data-cart]');
+            if (cartButton) {
+                toggleCart(cartButton.dataset.cart);
+                return;
+            }
+
+            const infoButton = event.target.closest('[data-info]');
+            if (infoButton) {
+                openInfo(infoButton.dataset.info);
+            }
+        });
+
+        searchInput.addEventListener('input', () => {
+            state.query = searchInput.value;
+            searchClear.hidden = !searchInput.value;
+            renderGroups();
+        });
+
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            state.query = '';
+            searchClear.hidden = true;
+            renderGroups();
+            searchInput.focus();
+        });
+
+        document.getElementById('btn-tickets-back').addEventListener('click', () => {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                showToast('You are at the start of the demo.');
+            }
+        });
+
+        btnBuy.addEventListener('click', openSetup);
+        document.getElementById('btn-setup-back').addEventListener('click', backToTickets);
+        document.getElementById('btn-edit-tickets').addEventListener('click', backToTickets);
+
+        summaryList.addEventListener('click', (event) => {
+            const increment = event.target.closest('[data-inc]');
+            if (increment) {
+                const id = increment.dataset.inc;
+                setCartQty(id, (state.cart.get(id) || 0) + 1);
+                renderSetup();
+                return;
+            }
+
+            const decrement = event.target.closest('[data-dec]');
+            if (decrement) {
+                const id = decrement.dataset.dec;
+                const next = (state.cart.get(id) || 0) - 1;
+                if (next >= 1) {
+                    setCartQty(id, next);
+                    renderSetup();
+                }
+            }
+        });
+
+        directionList.addEventListener('input', (event) => {
+            const input = event.target.closest('.dir-input');
+            if (!input) return;
+            const item = TICKETS.get(input.dataset.id);
+            const direction = ensureDirection(item);
+            if (event.target.classList.contains('dir-from')) {
+                direction.from = event.target.value;
+            } else {
+                direction.to = event.target.value;
+            }
+        });
+
+        directionList.addEventListener('click', (event) => {
+            const swapButton = event.target.closest('[data-swap]');
+            if (!swapButton) return;
+            const item = TICKETS.get(swapButton.dataset.swap);
+            const direction = ensureDirection(item);
+            const previousFrom = direction.from;
+            direction.from = direction.to;
+            direction.to = previousFrom;
+            renderSetup();
+        });
+
+        document.querySelectorAll('input[name="activation"]').forEach((radio) => {
+            radio.addEventListener('change', () => {
+                state.activation = radio.value;
+                scheduleFields.hidden = state.activation !== 'schedule';
+                if (state.activation === 'schedule' && !state.scheduleValue) {
+                    state.scheduleValue = defaultScheduleValue();
+                    inputDatetime.value = state.scheduleValue;
+                }
+                scheduleError.hidden = true;
+            });
+        });
+
+        inputDatetime.addEventListener('input', () => {
+            state.scheduleValue = inputDatetime.value;
+            scheduleError.hidden = true;
+        });
+
+        btnGenerate.addEventListener('click', purchase);
+
+        infoModal.addEventListener('click', (event) => {
+            if (event.target.closest('[data-close-info]')) {
+                closeInfo();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (!infoModal.hidden) closeInfo();
+                if (document.activeElement === searchInput && searchInput.value) {
+                    searchInput.value = '';
+                    state.query = '';
+                    searchClear.hidden = true;
+                    renderGroups();
+                }
+            }
+        });
+
+        /* Active ticket interactions (kept from the original site) */
+        document.getElementById('btn-back').addEventListener('click', () => {
+            if (timerInterval) clearInterval(timerInterval);
+            ticketScreen.classList.add('hidden');
+            setupScreen.classList.remove('is-hidden');
+            renderSetup();
+        });
+
+        document.getElementById('btn-read-all').addEventListener('click', () => {
+            const button = document.getElementById('btn-read-all');
+            const expanded = button.getAttribute('aria-expanded') === 'true';
+            button.setAttribute('aria-expanded', String(!expanded));
+            document.getElementById('ticket-disclaimer').classList.toggle('hidden', expanded);
+        });
+
+        document.getElementById('btn-enlarge-qr').addEventListener('click', () => {
+            const overlay = document.getElementById('enlarged-qr-screen');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+        });
+
+        document.getElementById('btn-close-enlarged-qr').addEventListener('click', () => {
+            const overlay = document.getElementById('enlarged-qr-screen');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const overlay = document.getElementById('enlarged-qr-screen');
+            if (!overlay.classList.contains('hidden')) {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
+        });
+
+        /* Initial render */
+        renderGroups();
+    });
+</script>
+
+</body>
+</html>

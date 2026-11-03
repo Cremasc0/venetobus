@@ -1,0 +1,17 @@
+{
+  "name": "Busitalia Tickets",
+  "short_name": "Busitalia",
+  "icons": [
+    {
+      "src": "appimage.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#3eb744",
+  "background_color": "#3eb744"
+}
