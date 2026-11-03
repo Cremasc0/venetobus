@@ -14,7 +14,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Busitalia">
-    <meta name="theme-color" content="#3eb744">
+    <meta id="theme-color-meta" name="theme-color" content="#ffffff">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1708,6 +1708,14 @@
         const ticketsScreen = document.getElementById('tickets-screen');
         const setupScreen = document.getElementById('setup-screen');
         const ticketScreen = document.getElementById('ticket-screen');
+        const themeColorMeta = document.getElementById('theme-color-meta');
+
+        const setBrowserChrome = (ticketActive) => {
+            const color = ticketActive ? '#3eb744' : '#ffffff';
+            themeColorMeta.setAttribute('content', color);
+            document.documentElement.style.backgroundColor = color;
+            document.body.style.backgroundColor = color;
+        };
 
         const groupsEl = document.getElementById('ticket-groups');
         const noResultsEl = document.getElementById('no-results');
@@ -1960,6 +1968,7 @@
             if (!state.cart.size) return;
             state.lastListScroll = ticketList.scrollTop;
             renderSetup();
+            setBrowserChrome(false);
             ticketsScreen.classList.add('is-hidden');
             setupScreen.classList.remove('is-hidden');
             setupScreen.scrollTop = 0;
@@ -1969,6 +1978,7 @@
             if (state.activation === 'schedule') {
                 state.scheduleValue = inputDatetime.value;
             }
+            setBrowserChrome(false);
             setupScreen.classList.add('is-hidden');
             ticketsScreen.classList.remove('is-hidden');
             requestAnimationFrame(() => {
@@ -2036,6 +2046,7 @@
 
             setupScreen.classList.add('is-hidden');
             ticketScreen.classList.remove('hidden');
+            setBrowserChrome(true);
             window.scrollTo(0, 0);
             document.getElementById('ticket-scroll-area').scrollTop = 0;
             document.getElementById('btn-read-all').setAttribute('aria-expanded', 'false');
@@ -2213,6 +2224,7 @@
         document.getElementById('btn-back').addEventListener('click', () => {
             if (timerInterval) clearInterval(timerInterval);
             ticketScreen.classList.add('hidden');
+            setBrowserChrome(false);
             setupScreen.classList.remove('is-hidden');
             renderSetup();
         });
@@ -2246,6 +2258,7 @@
         });
 
         /* Initial render */
+        setBrowserChrome(false);
         renderGroups();
     });
 </script>
