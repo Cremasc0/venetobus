@@ -118,12 +118,13 @@
         }
 
         .tickets-shell {
-            position: relative;
+            position: absolute;
+            inset: 0;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             width: 100%;
             max-width: 480px;
-            height: 100%;
             overflow: hidden;
             background: var(--page);
         }
@@ -1128,11 +1129,13 @@
         html.view-home body { background-color: #ab1c32; }
 
         .home-shell {
+            position: absolute;
+            inset: 0;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             width: 100%;
             max-width: 480px;
-            height: 100%;
             overflow: hidden;
             background: #f4f4f5;
         }
@@ -1435,11 +1438,13 @@
         }
 
         .my-shell {
+            position: absolute;
+            inset: 0;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             width: 100%;
             max-width: 480px;
-            height: 100%;
             overflow: hidden;
             background: #f4f4f5;
         }
@@ -1626,11 +1631,14 @@
         }
 
         .confirm-shell {
+            position: absolute;
+            inset: 0;
             display: flex;
             flex-direction: column;
             width: 100%;
             max-width: 480px;
-            min-height: 100%;
+            margin: 0 auto;
+            overflow-y: auto;
             padding: calc(10px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom));
             background: #fff;
         }
@@ -1759,14 +1767,14 @@
             will-change: transform;
         }
 
-        #ticket-screen::after {
-            content: "";
+        #ticket-bottom-bar {
             position: fixed;
-            inset-inline: 0;
+            left: 0;
+            right: 0;
             bottom: 0;
-            height: 90px;
+            height: calc(48px + env(safe-area-inset-bottom));
             background: #fff;
-            z-index: 20;
+            z-index: 30;
             pointer-events: none;
         }
 
@@ -2149,7 +2157,7 @@
     </div>
 
     <!-- ================= ACTIVE TICKET SCREEN ================= -->
-    <div id="ticket-screen" class="fixed inset-0 hidden z-10 flex flex-col w-full h-[100dvh] overflow-hidden bg-[#1f9750]">
+    <div id="ticket-screen" class="fixed inset-0 hidden z-10 flex flex-col w-full overflow-hidden bg-[#1f9750]">
 
         <!-- Header: Back Arrow + Active ticket -->
         <div class="relative flex-none flex items-center justify-center px-4 pt-[calc(16px+env(safe-area-inset-top))] pb-2.5 max-w-md mx-auto w-full">
@@ -2433,7 +2441,7 @@
             </div>
         </div>
         </main>
-        <div aria-hidden="true" class="absolute inset-x-0 bottom-0 z-20 h-[calc(48px+env(safe-area-inset-bottom))] bg-white"></div>
+        <div id="ticket-bottom-bar" aria-hidden="true"></div>
     </div>
 
     <!-- ================= INFO SHEET ================= -->
